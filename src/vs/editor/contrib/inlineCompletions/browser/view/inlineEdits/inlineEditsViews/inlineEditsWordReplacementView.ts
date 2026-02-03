@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { $, ModifierKeyEmitter, n, ObserverNodeWithElement } from '../../../../../../../base/browser/dom.js';
+import { $, n, ObserverNodeWithElement } from '../../../../../../../base/browser/dom.js';
 import { renderIcon } from '../../../../../../../base/browser/ui/iconLabel/iconLabels.js';
 import { KeybindingLabel, unthemedKeybindingLabelOptions } from '../../../../../../../base/browser/ui/keybindingLabel/keybindingLabel.js';
 import { IEquatable } from '../../../../../../../base/common/equals.js';
@@ -34,6 +34,7 @@ import { InlineCompletionEditorType } from '../../../model/provideInlineCompleti
 import { IInlineEditsView, InlineEditClickEvent, InlineEditTabAction } from '../inlineEditsViewInterface.js';
 import { getEditorBackgroundColor, getModifiedBorderColor, getOriginalBorderColor, INLINE_EDITS_BORDER_RADIUS, inlineEditIndicatorPrimaryBackground, inlineEditIndicatorPrimaryBorder, inlineEditIndicatorPrimaryForeground, modifiedChangedTextOverlayColor, observeColor, originalChangedTextOverlayColor } from '../theme.js';
 import { getEditorValidOverlayRect, mapOutFalsy, rectToProps } from '../utils/utils.js';
+import { IUserInteractionService } from '../../../../../../../platform/userInteraction/common/userInteraction.js';
 
 export class WordReplacementsViewData implements IEquatable<WordReplacementsViewData> {
 	constructor(
@@ -80,6 +81,7 @@ export class InlineEditsWordReplacementView extends Disposable implements IInlin
 		@IThemeService private readonly _themeService: IThemeService,
 		@IKeybindingService private readonly _keybindingService: IKeybindingService,
 		@IHoverService private readonly _hoverService: IHoverService,
+		@IUserInteractionService private readonly _userInteractionService: IUserInteractionService,
 	) {
 		super();
 		this._start = this._editor.observePosition(constObservable(this._viewData.edit.range.getStartPosition()), this._store);
@@ -106,7 +108,7 @@ export class InlineEditsWordReplacementView extends Disposable implements IInlin
 		});
 		const modifiedLineHeight = this._editor.observeLineHeightForPosition(this._viewData.edit.range.getStartPosition());
 		const altCount = observableFromPromise(this._viewData.alternativeAction?.count ?? new Promise<undefined>(resolve => resolve(undefined))).map(c => c.value);
-		const altModifierActive = observableFromEvent(this, ModifierKeyEmitter.getInstance().event, () => ModifierKeyEmitter.getInstance().keyStatus.shiftKey);
+		const altModifierActive = derived(this, reader => this._userInteractionService.readModifierKeyStatus(this._editor.editor.getDomNode()!, reader).shiftKey);
 		this._layout = derived(this, reader => {
 			this._renderTextEffect.read(reader);
 			const widgetStart = this._start.read(reader);
